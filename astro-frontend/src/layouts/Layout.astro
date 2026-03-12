@@ -1,0 +1,227 @@
+---
+import '../styles/global.css';
+import { translations } from '../i18n/translations.js';
+
+interface Props {
+  title?: string;
+  lang?: string;
+}
+
+const { title = 'Adrian Portilla Tattoo', lang = 'es' } = Astro.props;
+const t = translations[lang] || translations.es;
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} | Adrian Portilla Tattoo</title>
+  <meta name="description" content="Tatuador profesional — Arte en tu piel. Maestría en cada trazo." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+</head>
+<body>
+
+  <!-- Premium Background Effect -->
+  <div style="position: fixed; inset: 0; z-index: -2; background-color: var(--bg-primary); overflow: hidden;">
+    <div id="glowOrb" style="position: absolute; top:50%; left:50%; width:60vw; height:60vw; max-width: 800px; max-height: 800px; transform: translate(-50%, -50%); background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%); border-radius: 50%; filter: blur(80px); opacity: 0.6; pointer-events: none; transition: width 0.3s, height 0.3s;"></div>
+    <!-- Noise texture for premium cinematic feel -->
+    <div style="position: absolute; inset: 0; background-image: url('data:image/svg+xml,%3Csvg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"noiseFilter\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.8\" numOctaves=\"3\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23noiseFilter)\" opacity=\"0.04\"/%3E%3C/svg%3E'); pointer-events: none; opacity: 1; mix-blend-mode: overlay;"></div>
+  </div>
+
+  <script is:inline>
+    // Premium Cursor Follower Logic
+    document.addEventListener('mousemove', (e) => {
+      const orb = document.getElementById('glowOrb');
+      if(orb) {
+        // Smooth follow logic using requestAnimationFrame for performance
+        if(!orb.dataset.moving) {
+          orb.dataset.moving = "true";
+          requestAnimationFrame(() => {
+            orb.style.top = `${e.clientY}px`;
+            orb.style.left = `${e.clientX}px`;
+            orb.dataset.moving = "";
+          });
+        }
+      }
+    });
+  </script>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href={`/${lang}/`} class="nav-logo">AP TATTOO</a>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href={`/${lang}/`}>{t.nav.home}</a></li>
+      <li><a href={`/${lang}/#gallery`}>{t.nav.gallery}</a></li>
+      <li><a href={`/${lang}/tienda`}>{t.nav.store}</a></li>
+      <li><a href={`/${lang}/contacto`}>{t.nav.contact}</a></li>
+    </ul>
+
+    <div class="nav-controls">
+      <!-- Language switcher -->
+      <button class="lang-btn" id="btnLangEs" data-lang="es" onclick="window.switchLang('es')">ES</button>
+      <button class="lang-btn" id="btnLangEn" data-lang="en" onclick="window.switchLang('en')">EN</button>
+      <button class="lang-btn" id="btnLangFr" data-lang="fr" onclick="window.switchLang('fr')">FR</button>
+
+      <!-- Theme toggle -->
+      <button class="theme-btn" id="themeToggle" onclick="window.toggleTheme()" title="Toggle theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+
+      <!-- Cart button (only on store) -->
+      <button class="theme-btn" id="cartBtn" style="display:none;" onclick="window.openCart()">
+        🛒 <span id="cartCount">0</span>
+      </button>
+
+      <!-- User/Logout -->
+      <a href={`/${lang}/admin`} class="btn btn-primary" id="adminBtn" style="display:none; padding: 0.5rem 0.85rem; font-size: 0.75rem; border-radius: 8px; margin-right: 0.5rem;">
+        {t.nav.admin}
+      </a>
+      <a href={`/${lang}/login`} class="btn btn-outline" id="userBtn" style="padding: 0.5rem 0.85rem; font-size: 0.75rem; border-radius: 8px;">
+        {t.nav.login}
+      </a>
+      <button class="btn btn-outline" id="logoutBtn" style="display:none; padding: 0.5rem 0.85rem; font-size: 0.75rem; border-radius: 8px; border-color: var(--error-dim); color: var(--error);" onclick="globalLogout()">
+        {t.nav.logout}
+      </button>
+    </div>
+
+    <button class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <main>
+    <slot />
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-logo">ADRIAN PORTILLA</div>
+    <p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem;">
+      {t.footer.follow}:
+    </p>
+    <div class="social-links">
+      <a href="#" class="social-link" title="Instagram">📸</a>
+      <a href="#" class="social-link" title="TikTok">🎵</a>
+      <a href="#" class="social-link" title="Facebook">👤</a>
+    </div>
+    <p class="footer-copy">© {new Date().getFullYear()} Adrian Portilla Tattoo. {t.footer.rights}.</p>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="window.closeLightbox()">
+    <button class="lightbox-close" onclick="window.closeLightbox()">✕</button>
+    <img id="lightboxImg" src="" alt="" />
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script is:inline>
+    // ── Theme ──
+    (function() {
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.textContent = saved === 'dark' ? '🌙' : '☀️';
+    })();
+
+    window.toggleTheme = function() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.textContent = next === 'dark' ? '🌙' : '☀️';
+    };
+
+    // ── Language ──
+    (function() {
+      const path = window.location.pathname;
+      const segments = path.split('/').filter(Boolean);
+      const lang = ['es','en','fr'].includes(segments[0]) ? segments[0] : 'es';
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+    })();
+
+    window.switchLang = function(lang) {
+      const path = window.location.pathname;
+      const segments = path.split('/').filter(Boolean);
+      const knownLangs = ['es','en','fr'];
+      let rest = segments.filter((s, i) => i === 0 && knownLangs.includes(s) ? false : true);
+      const newPath = '/' + lang + (rest.length ? '/' + rest.join('/') : '/');
+      window.location.href = newPath;
+    };
+
+    // ── Lightbox ──
+    window.openLightbox = function(src) {
+      const lb = document.getElementById('lightbox');
+      const img = document.getElementById('lightboxImg');
+      img.src = src;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeLightbox = function() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    };
+
+    // ── Toast ──
+    window.showToast = function(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.className = 'toast', 3500);
+    };
+
+    // ── Global Scroll Reveal ──
+    const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    // ── Auth Check ──
+    (function() {
+      const uBtn = document.getElementById('userBtn');
+      const lBtn = document.getElementById('logoutBtn');
+      const aBtn = document.getElementById('adminBtn');
+      const userToken = localStorage.getItem('apt_user_token');
+      const adminToken = localStorage.getItem('apt_admin_token');
+      
+      if (adminToken) {
+        if(uBtn) uBtn.style.display = 'none';
+        if(aBtn) aBtn.style.display = 'block';
+        if(lBtn) lBtn.style.display = 'block';
+      } else if (userToken) {
+        if(uBtn) uBtn.style.display = 'none';
+        if(aBtn) aBtn.style.display = 'none';
+        if(lBtn) lBtn.style.display = 'block';
+      } else {
+        if(uBtn) uBtn.style.display = 'block';
+        if(aBtn) aBtn.style.display = 'none';
+        if(lBtn) lBtn.style.display = 'none';
+      }
+    })();
+
+    window.globalLogout = function() {
+      localStorage.removeItem('apt_user_token');
+      localStorage.removeItem('apt_admin_token');
+      window.location.reload();
+    };
+
+    // Apply to elements immediately when DOM is parsed
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    });
+  </script>
+
+</body>
+</html>

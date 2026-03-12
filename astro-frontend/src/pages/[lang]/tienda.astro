@@ -1,0 +1,204 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { translations } from '../../i18n/translations.js';
+
+const lang = Astro.params.lang || 'es';
+const t = translations[lang] || translations.es;
+const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
+---
+<Layout title={t.store.title} lang={lang}>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h1 class="section-title" style="display:inline-flex; align-items:center; gap:0.75rem;">
+          {t.store.title}
+          <span style="font-size:0.7rem; background:var(--accent); color:var(--bg-primary); padding:3px 8px; border-radius:4px; transform:rotate(5deg); box-shadow:0 3px 8px rgba(0,0,0,0.5);">V3 PREVIEW</span>
+        </h1>
+        <div class="golden-line"></div>
+        <p class="section-subtitle">{t.store.subtitle} — Módulo en desarrollo</p>
+      </div>
+
+      <div id="productsGrid" class="products-grid">
+        <p style="color:var(--text-muted); grid-column:1/-1; text-align:center; padding:3rem;">{t.store.loading}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cart Overlay -->
+  <div class="cart-overlay" id="cartOverlay" onclick="window.closeCart()"></div>
+
+  <!-- Cart Sidebar -->
+  <div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <span class="cart-title">{t.store.cart}</span>
+      <button class="cart-close" onclick="window.closeCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">
+        <div style="font-size:2.5rem; margin-bottom:1rem;">🛒</div>
+        <p>{t.store.cartEmpty}</p>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>{t.store.total}</span>
+        <span class="cart-total-amount" id="cartTotal">$0.00</span>
+      </div>
+      <div style="background:var(--accent-dim); color:var(--accent); padding:0.75rem; border-radius:8px; font-size:0.75rem; text-align:center; margin-bottom:1rem; border:1px solid var(--border);">
+        <strong>Versión 3:</strong> La tienda online y pasarela de pagos se activarán próximamente.
+      </div>
+      <button class="btn btn-outline" style="width:100%; cursor:not-allowed; opacity:0.6;" disabled>
+        {t.store.payWith} (V3)
+      </button>
+    </div>
+  </div>
+
+  <!-- ONVO Payment Modal -->
+  <div id="onvoModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9990; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+    <div style="background:var(--bg-secondary); border-radius:16px; padding:2rem; max-width:480px; width:90%; border:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-family:'Cinzel',serif; color:var(--accent);">{t.store.securePayment}</h3>
+        <button onclick="document.getElementById('onvoModal').style.display='none'" style="background:none;border:none;color:var(--text-secondary);font-size:1.4rem;cursor:pointer;">✕</button>
+      </div>
+      <div id="onvoPayContainer" style="min-height:200px; display:flex; align-items:center; justify-content:center;">
+        <p style="color:var(--text-muted);">{t.store.initializingPayment}</p>
+      </div>
+    </div>
+  </div>
+
+</Layout>
+
+<script define:vars={{ API_URL, addToCartTxt: t.store.addToCart, outOfStockTxt: t.store.outOfStock, removeTxt: t.store.remove, cartEmptyTxt: t.store.cartEmpty, totalTxt: t.store.total, payWithTxt: t.store.payWith, unitsTxt: t.store.units, emptyTxt: t.store.empty, errorTxt: t.store.error, addedToCartTxt: t.store.addedToCart, availableTxt: t.store.available, currencyTxt: t.store.currency }}>
+  // Show cart button in navbar
+  const cartBtn = document.getElementById('cartBtn');
+  if (cartBtn) cartBtn.style.display = 'inline-flex';
+
+  let cart = JSON.parse(localStorage.getItem('apt_cart') || '[]');
+  let products = [];
+
+  function updateCartUI() {
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const count = cart.reduce((s, i) => s + i.qty, 0);
+    const countEl = document.getElementById('cartCount');
+    if (countEl) countEl.textContent = count;
+    const totalEl = document.getElementById('cartTotal');
+    if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+
+    const itemsEl = document.getElementById('cartItems');
+    if (!itemsEl) return;
+
+    if (cart.length === 0) {
+      itemsEl.innerHTML = `<div class="cart-empty"><div style="font-size:2.5rem;margin-bottom:1rem;">🛒</div><p>${cartEmptyTxt}</p></div>`;
+      return;
+    }
+
+    itemsEl.innerHTML = cart.map(item => `
+      <div class="cart-item">
+        ${item.image ? `<img src="${item.image}" alt="${item.name}" />` : '<div style="width:64px;height:64px;background:var(--bg-elevated);border-radius:8px;"></div>'}
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-price">$${item.price.toFixed(2)} × ${item.qty}</div>
+        </div>
+        <button class="cart-item-remove" onclick="removeFromCart(${item.id})">✕</button>
+      </div>
+    `).join('');
+    localStorage.setItem('apt_cart', JSON.stringify(cart));
+  }
+
+  window.openCart = function() {
+    document.getElementById('cartSidebar').classList.add('open');
+    document.getElementById('cartOverlay').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeCart = function() {
+    document.getElementById('cartSidebar').classList.remove('open');
+    document.getElementById('cartOverlay').classList.remove('visible');
+    document.body.style.overflow = '';
+  };
+
+  function addToCart(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    const existing = cart.find(i => i.id === id);
+    if (existing) existing.qty += 1;
+    else cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, image: p.images?.[0] || '' });
+    updateCartUI();
+    window.showToast(`${p.name} ${addedToCartTxt}`, 'success');
+  }
+
+  function removeFromCart(id) {
+    cart = cart.filter(i => i.id !== id);
+    updateCartUI();
+  }
+
+  window.startCheckout = async function() {
+    if (cart.length === 0) return;
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const modal = document.getElementById('onvoModal');
+    modal.style.display = 'flex';
+
+    try {
+      const res = await fetch(`${API_URL}/api/payments/intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total, currency: 'USD', description: 'Compra AP Tattoo Store' })
+      });
+      const data = await res.json();
+      if (data.paymentIntentId) {
+        document.getElementById('onvoPayContainer').innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:2rem;margin-bottom:1rem;">💳</div>
+            <p style="color:var(--text-primary);margin-bottom:0.5rem;font-weight:600;">${totalTxt}: $${total.toFixed(2)} ${currencyTxt}</p>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Payment Intent ID: ${data.paymentIntentId}</p>
+            <p style="color:var(--text-secondary);font-size:0.85rem;">El widget de ONVO se cargará con tu clave pública configurada.</p>
+          </div>`;
+      } else {
+        document.getElementById('onvoPayContainer').innerHTML = `<p style="color:var(--error);">${data.error || 'Error iniciando pago'}</p>`;
+      }
+    } catch (err) {
+      document.getElementById('onvoPayContainer').innerHTML = `<p style="color:var(--error);">Error conectando con el servidor de pagos.</p>`;
+    }
+  };
+
+  async function loadProducts() {
+    const grid = document.getElementById('productsGrid');
+    try {
+      const res = await fetch(`${API_URL}/api/products`);
+      const data = await res.json();
+      products = data.products || [];
+
+      if (products.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--text-muted);">
+          <div style="font-size:3rem;margin-bottom:1rem;">🎨</div>
+          <p>${emptyTxt}</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = products.map(p => `
+        <div class="product-card fade-in">
+          <div class="product-image">
+            ${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" loading="lazy" />` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);color:var(--text-muted);font-size:2rem;">🖼️</div>`}
+          </div>
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            ${p.description ? `<p class="product-desc">${p.description}</p>` : ''}
+            <div class="product-footer">
+              <span class="product-price">$${p.price.toFixed(2)}</span>
+              ${p.stock > 0
+                ? `<button class="btn btn-primary btn-cart" onclick="addToCart(${p.id})">${addToCartTxt}</button>`
+                : `<span class="badge">${outOfStockTxt}</span>`}
+            </div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">${p.stock} ${unitsTxt} ${availableTxt}</p>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-muted);">${errorTxt}</p>`;
+    }
+  }
+
+  loadProducts();
+  updateCartUI();
+</script>

@@ -1,0 +1,533 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+const lang = Astro.params.lang || 'es';
+const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
+---
+<Layout title="Admin — Galería" lang={lang}>
+<style>
+  /* ── Upload Drop Zone ── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-elevated);
+    position: relative;
+  }
+  .drop-zone.drag-active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: scale(1.01);
+  }
+  .drop-zone:hover { border-color: var(--accent); }
+
+  /* ── Preview Grid ── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .preview-card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+  }
+  .preview-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-card .remove-btn {
+    position: absolute; top: 5px; right: 5px;
+    width: 24px; height: 24px;
+    background: rgba(0,0,0,0.8); border: none; border-radius: 50%;
+    color: #fff; font-size: 0.7rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .preview-card .remove-btn:hover { background: var(--error); }
+  .preview-card .status-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0.25rem; font-size: 0.7rem; color: white;
+  }
+  .preview-card .progress-bar {
+    width: 70%; height: 3px; background: rgba(255,255,255,0.3);
+    border-radius: 2px; overflow: hidden;
+  }
+  .preview-card .progress-fill {
+    height: 100%; background: var(--accent);
+    transition: width 0.3s; border-radius: 2px;
+  }
+
+  /* ── Gallery Admin Grid ── */
+  .gallery-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .gallery-admin-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+    aspect-ratio: 1;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .gallery-admin-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .gallery-admin-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gallery-admin-card .card-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%);
+    opacity: 0; transition: opacity 0.25s;
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: 0.75rem;
+    gap: 0.4rem;
+  }
+  .gallery-admin-card:hover .card-overlay { opacity: 1; }
+  .card-action-btn {
+    width: 100%; padding: 0.35rem 0.5rem;
+    font-size: 0.75rem; border-radius: 8px;
+    border: none; cursor: pointer; font-weight: 600;
+    transition: all 0.2s; font-family: 'Inter', sans-serif;
+  }
+  .btn-view { background: rgba(255,255,255,0.15); color: #fff; }
+  .btn-view:hover { background: rgba(255,255,255,0.3); }
+  .btn-delete { background: rgba(239,68,68,0.8); color: #fff; }
+  .btn-delete:hover { background: #ef4444; }
+
+  /* ── Stats strip ── */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .stat-icon { font-size: 1.8rem; }
+  .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .stat-value { font-size: 1.7rem; font-weight: 800; color: var(--accent); line-height: 1; }
+
+  /* ── Upload progress bar ── */
+  .upload-progress-bar {
+    height: 4px; background: var(--border-subtle);
+    border-radius: 2px; margin-top: 1rem; overflow: hidden;
+    display: none;
+  }
+  .upload-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), #ff6b6b);
+    border-radius: 2px; transition: width 0.3s;
+    width: 0%;
+  }
+
+  @media (max-width: 640px) {
+    .stat-strip { grid-template-columns: 1fr; }
+    .gallery-admin-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  }
+</style>
+
+<div class="admin-wrapper">
+  <div class="admin-grid">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1.5rem;">
+        <span style="font-size:1.4rem;">🛡️</span>
+        <h3 style="font-family:'Cinzel',serif; color:var(--accent); font-size:0.85rem; letter-spacing:0.08em;">PANEL ADMIN</h3>
+      </div>
+      <a href={`/${lang}/admin`} class="admin-nav-link">🏠 Dashboard</a>
+      <a href={`/${lang}/admin/galeria`} class="admin-nav-link active">🖼️ Galería</a>
+      <div class="admin-nav-link" style="opacity:0.45; cursor:not-allowed; display:flex; justify-content:space-between; align-items:center;">
+        <span>🛍️ Productos</span>
+        <span style="font-size:0.6rem; background:var(--accent); color:var(--bg-primary); padding:2px 7px; border-radius:4px; font-weight:700;">V3</span>
+      </div>
+      <hr style="border: none; border-top: 1px solid var(--border-subtle); margin:1.25rem 0;" />
+      <a href={`/${lang}/`} class="admin-nav-link" target="_blank">↗ Ver sitio</a>
+      <button id="logoutBtn" class="admin-nav-link" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; color:var(--error); margin-top:0.25rem;">
+        🚪 Cerrar Sesión
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="admin-content">
+
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h2 style="font-family:'Cinzel',serif; color:var(--text-primary); font-size:1.8rem; margin-bottom:0.25rem;">Gestión de Galería</h2>
+          <p style="color:var(--text-muted); font-size:0.9rem;">Sube y administra las fotos de tu portafolio</p>
+        </div>
+        <button class="btn btn-primary" id="toggleUploadBtn" style="border-radius:12px; padding:0.75rem 1.5rem; gap:0.5rem;">
+          <span>📤</span> Subir Fotos
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stat-strip">
+        <div class="stat-card">
+          <span class="stat-icon">🖼️</span>
+          <div>
+            <div class="stat-label">Total fotos</div>
+            <div class="stat-value" id="totalCount">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">📤</span>
+          <div>
+            <div class="stat-label">En cola</div>
+            <div class="stat-value" id="queueCount">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">✅</span>
+          <div>
+            <div class="stat-label">Estado</div>
+            <div class="stat-value" style="font-size:1rem; color: #22c55e; padding-top:0.25rem;">Online</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Panel -->
+      <div id="uploadPanel" style="display:none; background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:2rem; margin-bottom:2rem;">
+        <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-bottom:1.5rem;">📤 Subir nuevas fotos</h3>
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" />
+          <div style="font-size:3rem; margin-bottom:1rem;">📷</div>
+          <p style="color:var(--text-primary); font-weight:600; margin-bottom:0.5rem;">Arrastra las fotos aquí</p>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.25rem;">o haz clic para seleccionar</p>
+          <button type="button" class="btn btn-outline" id="browseBtn" style="border-radius:10px; padding:0.6rem 1.5rem; font-size:0.85rem;">
+            Seleccionar archivos
+          </button>
+          <p style="color:var(--text-muted); font-size:0.75rem; margin-top:1rem;">JPG, PNG, WebP • máx. 10 MB por foto</p>
+        </div>
+
+        <!-- Preview Queue -->
+        <div id="previewGrid" class="preview-grid"></div>
+        <div class="upload-progress-bar" id="globalProgressBar">
+          <div class="upload-progress-fill" id="globalProgressFill"></div>
+        </div>
+
+        <!-- Upload Actions -->
+        <div id="uploadActions" style="display:none; margin-top:1.5rem; display:none; gap:1rem; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-primary" id="uploadAllBtn" style="border-radius:12px; gap:0.5rem;">
+            <span>🚀</span> <span id="uploadAllLabel">Subir todas</span>
+          </button>
+          <button class="btn btn-outline" id="clearQueueBtn" style="border-radius:12px;">
+            🗑️ Limpiar cola
+          </button>
+          <span id="uploadStatus" style="color:var(--text-muted); font-size:0.85rem; margin-left:auto;"></span>
+        </div>
+      </div>
+
+      <!-- Gallery Grid Section -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+          <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary);">Fotos en la Galería</h3>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-outline" id="refreshBtn" style="border-radius:10px; padding:0.5rem 1rem; font-size:0.82rem;">🔄 Refrescar</button>
+          </div>
+        </div>
+        <div id="galleryGrid" class="gallery-admin-grid">
+          <div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-muted);">
+            <div style="font-size:2rem; margin-bottom:0.5rem; opacity:0.4;">⏳</div>
+            <p>Cargando galería...</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-grid -->
+</div><!-- /admin-wrapper -->
+
+<!-- Lightbox -->
+<div id="lbOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+  <button id="lbClose" style="position:absolute; top:1.5rem; right:1.5rem; background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:44px; height:44px; color:#fff; font-size:1.4rem; cursor:pointer;">✕</button>
+  <img id="lbImg" src="" alt="" style="max-width:90vw; max-height:88vh; object-fit:contain; border-radius:8px; box-shadow:0 0 60px rgba(0,0,0,0.8);" />
+</div>
+</Layout>
+
+<script define:vars={{ API_URL, lang }}>
+  /* ── Auth Guard ── */
+  function getToken() {
+    const t = localStorage.getItem('apt_admin_token');
+    if (!t) window.location.href = `/${lang}/admin`;
+    return t;
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('apt_admin_token');
+    localStorage.removeItem('apt_user_token');
+    window.location.href = `/${lang}/admin`;
+  });
+
+  /* ── State ── */
+  let queue = []; // { file, objectURL, status: 'pending'|'uploading'|'done'|'error' }
+  let galleryImages = [];
+
+  /* ── Toggle upload panel ── */
+  const toggleBtn = document.getElementById('toggleUploadBtn');
+  const uploadPanel = document.getElementById('uploadPanel');
+  toggleBtn.addEventListener('click', () => {
+    const open = uploadPanel.style.display !== 'none';
+    uploadPanel.style.display = open ? 'none' : 'block';
+    toggleBtn.innerHTML = open ? '<span>📤</span> Subir Fotos' : '<span>✕</span> Cerrar';
+  });
+
+  /* ── Drop Zone & File Input ── */
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const browseBtn = document.getElementById('browseBtn');
+
+  browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-active');
+    addFilesToQueue(Array.from(e.dataTransfer.files));
+  });
+
+  fileInput.addEventListener('change', () => {
+    addFilesToQueue(Array.from(fileInput.files));
+    fileInput.value = '';
+  });
+
+  function addFilesToQueue(files) {
+    const valid = files.filter(f => f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024);
+    if (valid.length < files.length) {
+      showToast(`${files.length - valid.length} archivo(s) ignorado(s) (no son imagen o superan 10 MB)`, 'error');
+    }
+    valid.forEach(file => {
+      queue.push({ file, objectURL: URL.createObjectURL(file), status: 'pending' });
+    });
+    renderQueue();
+  }
+
+  function renderQueue() {
+    const grid = document.getElementById('previewGrid');
+    const actions = document.getElementById('uploadActions');
+    document.getElementById('queueCount').textContent = queue.filter(i => i.status === 'pending').length;
+
+    if (!queue.length) {
+      grid.innerHTML = '';
+      actions.style.display = 'none';
+      return;
+    }
+
+    actions.style.display = 'flex';
+    grid.innerHTML = queue.map((item, idx) => `
+      <div class="preview-card" id="preview-${idx}">
+        <img src="${item.objectURL}" alt="" />
+        ${item.status === 'pending' ? `<button class="remove-btn" onclick="removeFromQueue(${idx})">✕</button>` : ''}
+        ${item.status === 'uploading' ? `
+          <div class="status-overlay">
+            <span>Subiendo...</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:60%;"></div></div>
+          </div>` : ''}
+        ${item.status === 'done' ? `
+          <div class="status-overlay" style="background:rgba(34,197,94,0.6);">
+            <span style="font-size:1.5rem;">✓</span>
+          </div>` : ''}
+        ${item.status === 'error' ? `
+          <div class="status-overlay" style="background:rgba(239,68,68,0.6);">
+            <span>✗ Error</span>
+          </div>` : ''}
+      </div>
+    `).join('');
+
+    const pending = queue.filter(i => i.status === 'pending').length;
+    document.getElementById('uploadAllLabel').textContent = `Subir ${pending} foto${pending !== 1 ? 's' : ''}`;
+  }
+
+  window.removeFromQueue = function(idx) {
+    URL.revokeObjectURL(queue[idx].objectURL);
+    queue.splice(idx, 1);
+    renderQueue();
+  };
+
+  document.getElementById('clearQueueBtn').addEventListener('click', () => {
+    queue.forEach(i => URL.revokeObjectURL(i.objectURL));
+    queue = [];
+    renderQueue();
+  });
+
+  /* ── Upload All ── */
+  document.getElementById('uploadAllBtn').addEventListener('click', async () => {
+    const pending = queue.filter(i => i.status === 'pending');
+    if (!pending.length) return;
+
+    const uploadBtn = document.getElementById('uploadAllBtn');
+    uploadBtn.disabled = true;
+    const progressBar = document.getElementById('globalProgressBar');
+    const progressFill = document.getElementById('globalProgressFill');
+    progressBar.style.display = 'block';
+
+    let done = 0;
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].status !== 'pending') continue;
+
+      queue[i].status = 'uploading';
+      renderQueue();
+
+      const fd = new FormData();
+      fd.append('image', queue[i].file);
+
+      try {
+        const res = await fetch(`${API_URL}/api/gallery`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getToken()}` },
+          body: fd
+        });
+        const data = await res.json();
+        if (data.url) {
+          queue[i].status = 'done';
+          done++;
+        } else {
+          queue[i].status = 'error';
+        }
+      } catch {
+        queue[i].status = 'error';
+      }
+
+      progressFill.style.width = `${(done / pending.length) * 100}%`;
+      renderQueue();
+    }
+
+    uploadBtn.disabled = false;
+    progressBar.style.display = 'none';
+    progressFill.style.width = '0%';
+
+    const errors = queue.filter(i => i.status === 'error').length;
+    if (errors === 0) {
+      showToast(`✅ ${done} foto${done !== 1 ? 's' : ''} subida${done !== 1 ? 's' : ''} correctamente`, 'success');
+      setTimeout(() => {
+        queue.forEach(i => URL.revokeObjectURL(i.objectURL));
+        queue = [];
+        renderQueue();
+        uploadPanel.style.display = 'none';
+        toggleBtn.innerHTML = '<span>📤</span> Subir Fotos';
+      }, 1200);
+    } else {
+      showToast(`⚠️ ${done} subidas, ${errors} con error`, 'error');
+    }
+
+    loadGallery();
+  });
+
+  /* ── Gallery Load ── */
+  async function loadGallery() {
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted);"><div style="font-size:2rem; margin-bottom:0.5rem; opacity:0.4;">⏳</div><p>Cargando...</p></div>`;
+
+    try {
+      const res = await fetch(`${API_URL}/api/gallery`);
+      const data = await res.json();
+      galleryImages = data.images || [];
+      document.getElementById('totalCount').textContent = galleryImages.length;
+
+      if (!galleryImages.length) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-muted);">
+            <div style="font-size:3rem; margin-bottom:1rem; opacity:0.3;">🖼️</div>
+            <p style="margin-bottom:0.5rem;">No hay fotos en la galería aún</p>
+            <p style="font-size:0.85rem;">Sube tu primera foto usando el botón de arriba</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = galleryImages.map((img, idx) => `
+        <div class="gallery-admin-card" id="img-card-${idx}">
+          <img src="${img.url}" alt="Foto galería" loading="lazy" />
+          <div class="card-overlay">
+            <button class="card-action-btn btn-view" onclick="openLightbox('${img.url}')">🔍 Ver</button>
+            <button class="card-action-btn btn-delete" onclick="deleteImage('${img.publicId}', ${idx})">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `).join('');
+
+    } catch {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--error);">⚠️ Error al cargar la galería</div>`;
+    }
+  }
+
+  /* ── Delete Image ── */
+  window.deleteImage = async function(publicId, idx) {
+    if (!confirm('¿Eliminar esta foto de la galería?\nEsta acción no se puede deshacer.')) return;
+
+    const card = document.getElementById(`img-card-${idx}`);
+    if (card) {
+      card.style.opacity = '0.4';
+      card.style.pointerEvents = 'none';
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/gallery/${encodeURIComponent(publicId)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        showToast('Foto eliminada correctamente', 'success');
+        loadGallery();
+      } else {
+        const d = await res.json();
+        showToast(d.error || 'Error al eliminar', 'error');
+        if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
+      }
+    } catch {
+      showToast('Error de conexión', 'error');
+      if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
+    }
+  };
+
+  /* ── Lightbox ── */
+  const lbOverlay = document.getElementById('lbOverlay');
+  const lbImg = document.getElementById('lbImg');
+  window.openLightbox = function(src) {
+    lbImg.src = src;
+    lbOverlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+  document.getElementById('lbClose').addEventListener('click', () => {
+    lbOverlay.style.display = 'none';
+    document.body.style.overflow = '';
+    lbImg.src = '';
+  });
+  lbOverlay.addEventListener('click', (e) => {
+    if (e.target === lbOverlay) {
+      lbOverlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  });
+
+  /* ── Refresh ── */
+  document.getElementById('refreshBtn').addEventListener('click', loadGallery);
+
+  /* ── Toast (local fallback) ── */
+  function showToast(msg, type = 'success') {
+    if (window.showToast) { window.showToast(msg, type); return; }
+    const t = document.getElementById('toast');
+    if (t) {
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.className = 'toast', 3500);
+    }
+  }
+
+  /* ── Init ── */
+  getToken();
+  loadGallery();
+</script>

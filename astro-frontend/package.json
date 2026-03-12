@@ -1,0 +1,20 @@
+{
+  "name": "astro-frontend",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro silviaelena",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.4",
+    "@supabase/supabase-js": "^2.98.0",
+    "@tailwindcss/vite": "^4.2.1",
+    "astro": "^5.17.1",
+    "cloudinary": "^2.9.0",
+    "multer": "^2.1.0",
+    "tailwindcss": "^4.2.1"
+  }
+}

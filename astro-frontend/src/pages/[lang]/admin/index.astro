@@ -1,0 +1,187 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+const lang = Astro.params.lang || 'es';
+const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
+---
+<Layout title="Admin — Dashboard" lang={lang}>
+<div id="adminPanel" style="display:none;">
+    <div class="admin-wrapper">
+        <div class="admin-grid">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <h3 style="font-family:'Cinzel',serif; color:var(--accent); font-size:0.9rem; margin-bottom:1.25rem; letter-spacing:0.08em;">ADMIN</h3>
+                <a href={`/${lang}/admin`} class="admin-nav-link active">🏠 Dashboard</a>
+                <a href={`/${lang}/admin/galeria`} class="admin-nav-link">🖼️ Galería</a>
+                <div class="admin-nav-link" style="opacity:0.5; cursor:not-allowed; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🛍️ Productos</span>
+                    <span style="font-size:0.65rem; background:var(--accent); color:var(--bg-primary); padding:2px 6px; border-radius:4px; font-weight:bold;">V3</span>
+                </div>
+                <hr style="border-color:var(--border-subtle); margin:1rem 0;" />
+                <a href={`/${lang}/`} class="admin-nav-link">← Ver sitio</a>
+                <button onclick="window.adminLogout()" class="admin-nav-link" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; color:var(--error);">🚪 Salir</button>
+            </aside>
+
+            <!-- Main Dashboard View -->
+            <div class="admin-content">
+                <div style="margin-bottom:2rem;">
+                    <h2 style="font-family:'Cinzel',serif; color:var(--text-primary);">Dashboard</h2>
+                    <p style="color:var(--text-secondary); font-size:0.9rem;">Bienvenido al panel central de Adrian Portilla Tattoo.</p>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:3rem;">
+                    <div style="background:var(--bg-elevated); padding:1.5rem; border-radius:16px; border:1px solid var(--border-subtle); text-align:center;">
+                        <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">🖼️</span>
+                        <h4 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Galería</h4>
+                        <p id="galleryCount" style="font-size:2.5rem; font-weight:700; color:var(--accent); margin-top:0.25rem;">—</p>
+                        <a href={`/${lang}/admin/galeria`} style="display:inline-block; margin-top:1rem; font-size:0.8rem; color:var(--text-primary); text-decoration:none; border-bottom:1px solid var(--accent);">Gestionar fotos →</a>
+                    </div>
+                    
+                    <div style="background:var(--bg-elevated); padding:1.5rem; border-radius:16px; border:1px solid var(--border-subtle); text-align:center; position:relative; overflow:hidden;">
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:5;">
+                            <span style="background:var(--accent); color:var(--bg-primary); padding:4px 12px; border-radius:6px; font-weight:bold; font-size:0.8rem; transform:rotate(-5deg); box-shadow:0 4px 15px rgba(0,0,0,0.5);">PRÓXIMAMENTE V3</span>
+                        </div>
+                        <span style="font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.3;">🛍️</span>
+                        <h4 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; opacity:0.3;">Productos</h4>
+                        <p id="productCount" style="font-size:2.5rem; font-weight:700; color:var(--accent); margin-top:0.25rem; opacity:0.3;">—</p>
+                        <span style="display:inline-block; margin-top:1rem; font-size:0.8rem; color:var(--text-muted); text-decoration:none; border-bottom:1px solid transparent; opacity:0.3;">Gestionar tienda →</span>
+                    </div>
+
+                    <div style="background:var(--bg-elevated); padding:1.5rem; border-radius:16px; border:1px solid var(--border-subtle); text-align:center;">
+                        <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">✨</span>
+                        <h4 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Estado</h4>
+                        <p style="font-size:1.5rem; font-weight:600; color:#22c55e; margin-top:1rem;">Online</p>
+                        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1.5rem;">V1.0.0 Alpha</p>
+                    </div>
+                </div>
+
+                <!-- Activity Placeholder or Tip -->
+                <div style="background:var(--bg-elevated); padding:2rem; border-radius:16px; border:1px dashed var(--border-subtle); text-align:center; color:var(--text-muted);">
+                    <p style="font-size:0.95rem;">Selecciona una opción en el menú de la izquierda para empezar a gestionar tu contenido.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login Modal if not authenticated -->
+<div id="loginPanel" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:2rem; background: var(--bg-primary); position: relative; z-index: 10;">
+    <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:24px; padding:3rem; max-width:440px; width:100%; box-shadow: var(--shadow); backdrop-filter: blur(20px);">
+        <div style="text-align:center; margin-bottom:2.5rem;">
+            <div style="font-size:3rem; margin-bottom:1rem; filter: drop-shadow(0 0 10px var(--accent-glow));">🛡️</div>
+            <h1 style="font-family:'Cinzel',serif; font-size:1.8rem; letter-spacing: 0.05em; color:var(--text-primary);">Panel de <span style="color:var(--accent);">Control</span></h1>
+            <p style="color:var(--text-secondary); font-size:0.95rem; margin-top:0.75rem;">Ingreso exclusivo para administradores</p>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="email" placeholder="admin@email.com" required />
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div style="position:relative;">
+                    <input type="password" id="password" placeholder="••••••••" required style="width:100%; padding-right:40px;" />
+                    <button type="button" id="togglePasswordBtn" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0; display:flex;">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="loginError" style="display:none; color:var(--error); font-size:0.85rem; margin-bottom:1rem; text-align:center;"></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;" id="loginBtn">Ingresar</button>
+        </form>
+    </div>
+</div>
+</Layout>
+
+<script define:vars={{ API_URL, lang }}>
+    const token = localStorage.getItem('apt_admin_token');
+    const adminPanel = document.getElementById('adminPanel');
+    const loginPanel = document.getElementById('loginPanel');
+
+    async function init() {
+        if (!token) {
+            loginPanel.style.display = 'flex';
+            adminPanel.style.display = 'none';
+        } else {
+            // Check if token is still valid
+            try {
+                const res = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('apt_admin_token');
+                    window.location.reload();
+                    return;
+                }
+                const stats = await res.json();
+                document.getElementById('galleryCount').textContent = stats.galleryCount;
+                document.getElementById('productCount').textContent = stats.productCount;
+                
+                adminPanel.style.display = 'block';
+                loginPanel.style.display = 'none';
+            } catch {
+                localStorage.removeItem('apt_admin_token');
+                window.location.reload();
+            }
+        }
+    }
+
+    window.adminLogout = function() {
+        localStorage.removeItem('apt_admin_token');
+        window.location.reload();
+    };
+
+    // Toggle Password
+    document.getElementById('togglePasswordBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('password');
+        const eye = document.getElementById('eyeIcon');
+        const eyeOff = document.getElementById('eyeOffIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.style.display = 'none';
+            eyeOff.style.display = 'block';
+        } else {
+            input.type = 'password';
+            eye.style.display = 'block';
+            eyeOff.style.display = 'none';
+        }
+    });
+
+    // Handle Login
+    document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const errEl = document.getElementById('loginError');
+        btn.disabled = true;
+        btn.textContent = 'Verificando...';
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            const data = await res.json();
+            if (data.token && data.role === 'admin') {
+                localStorage.setItem('apt_admin_token', data.token);
+                window.location.reload();
+            } else {
+                errEl.textContent = data.role !== 'admin' && data.token ? 'Acceso denegado: Se requiere rol Admin' : (data.error || 'Credenciales inválidas');
+                errEl.style.display = 'block';
+            }
+        } catch {
+            errEl.textContent = 'Error conectando con el servidor';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Ingresar';
+        }
+    });
+
+    init();
+</script>

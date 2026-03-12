@@ -1,0 +1,43 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+const lang = Astro.params.lang || 'es';
+---
+<Layout title="Admin — Bloqueado" lang={lang}>
+<div class="admin-wrapper">
+  <div class="admin-grid">
+    <aside class="admin-sidebar">
+      <h3 style="font-family:'Cinzel',serif; color:var(--accent); font-size:0.9rem; margin-bottom:1.25rem; letter-spacing:0.08em;">ADMIN</h3>
+      <a href={`/${lang}/admin`} class="admin-nav-link">🏠 Dashboard</a>
+      <a href={`/${lang}/admin/galeria`} class="admin-nav-link">🖼️ Galería</a>
+      <div class="admin-nav-link active" style="opacity:0.5; cursor:not-allowed; display:flex; justify-content:space-between; align-items:center;">
+          <span>🛍️ Productos</span>
+          <span style="font-size:0.65rem; background:var(--accent); color:var(--bg-primary); padding:2px 6px; border-radius:4px; font-weight:bold;">V3</span>
+      </div>
+      <hr style="border-color:var(--border-subtle); margin:1rem 0;" />
+      <a href={`/${lang}/`} class="admin-nav-link">← Ver sitio</a>
+      <button onclick="window.adminLogout()" class="admin-nav-link" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;color:var(--error);">🚪 Salir</button>
+    </aside>
+
+    <div class="admin-content" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-height:400px;">
+      <div style="font-size:4rem; margin-bottom:1rem;">🛰️</div>
+      <h2 style="font-family:'Cinzel',serif; color:var(--accent); margin-bottom:1rem;">Funcionalidad Bloqueada</h2>
+      <p style="color:var(--text-secondary); max-width:400px; margin-bottom:2rem;">
+        La gestión de inventario y tienda virtual está programada para el despliegue de la <strong>Versión 3</strong>.
+      </p>
+      <a href={`/${lang}/admin`} class="btn btn-outline">Volver al Dashboard</a>
+    </div>
+  </div>
+</div>
+</Layout>
+
+<script define:vars={{ lang }}>
+  // Basic protection for the blocked page
+  if (!localStorage.getItem('apt_admin_token')) {
+    window.location.href = `/${lang}/admin`;
+  }
+  window.adminLogout = function() {
+    localStorage.removeItem('apt_admin_token');
+    window.location.href = `/${lang}/admin`;
+  };
+</script>

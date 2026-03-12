@@ -1,0 +1,175 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { translations } from '../../i18n/translations.js';
+
+const lang = Astro.params.lang || 'es';
+const t = translations[lang] || translations.es;
+const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
+---
+<Layout title={t.contact.title} lang={lang}>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h1 class="section-title">{t.contact.title}</h1>
+        <div class="golden-line"></div>
+        <p class="section-subtitle">{t.contact.subtitle}</p>
+      </div>
+
+      <div class="contact-grid">
+        <!-- Info -->
+        <div class="contact-info">
+          <h3>Adrian Portilla</h3>
+          <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.9rem;">
+            {t.contact.desc}
+          </p>
+          <div class="contact-detail">📍 <span>{t.contact.location}</span></div>
+          <div class="contact-detail">📸 <span>@adrianportillatattoo</span></div>
+          <div class="contact-detail">⏱️ <span>{t.contact.response}</span></div>
+
+          <div style="margin-top:2rem; padding:1.5rem; background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle);">
+            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.7;">
+              💡 <strong style="color:var(--accent);">Tip:</strong> {t.contact.tip}
+            </p>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <form id="contactForm">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group">
+              <label for="name">{t.contact.name} *</label>
+              <input type="text" id="name" name="name" required placeholder={t.contact.placeholderName} />
+            </div>
+            <div class="form-group">
+              <label for="email">{t.contact.email} *</label>
+              <input type="email" id="email" name="email" required placeholder={t.contact.placeholderEmail} />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group">
+              <label for="phone">{t.contact.phone}</label>
+              <input type="tel" id="phone" name="phone" placeholder="+1 234 567 890" />
+            </div>
+            <div class="form-group">
+              <label for="style">{t.contact.style}</label>
+              <select id="style" name="style">
+                <option value="">{t.contact.selectOption}</option>
+                {t.contact.styles.map((s: string) => <option value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bodyPart">{t.contact.bodyPart}</label>
+            <input type="text" id="bodyPart" name="bodyPart" placeholder={t.contact.placeholderBodyPart} />
+          </div>
+
+          <div class="form-group">
+            <label for="message">{t.contact.message} *</label>
+            <textarea id="message" name="message" required placeholder={t.contact.placeholderMessage}></textarea>
+          </div>
+
+          <!-- Image Upload -->
+          <div class="form-group">
+            <label>{t.contact.images}</label>
+            <div class="upload-zone" id="uploadZone">
+              <div class="upload-icon">🖼️</div>
+              <p class="upload-text">
+                {t.contact.dragDrop} <span id="browseBtn">{t.contact.browse}</span>
+              </p>
+              <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" />
+            </div>
+            <div class="image-previews" id="imagePreviews"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submitBtn" style="width:100%;">
+            {t.contact.send}
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</Layout>
+
+<script define:vars={{ API_URL, sendingTxt: t.contact.sending, successTxt: t.contact.success, errorTxt: t.contact.error, sendTxt: t.contact.send }}>
+  let selectedFiles = [];
+
+  // Upload zone
+  const zone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const browseBtn = document.getElementById('browseBtn');
+  const previews = document.getElementById('imagePreviews');
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('click', (e) => { if (e.target === zone || e.target.classList.contains('upload-icon')) fileInput.click(); });
+
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    addFiles([...e.dataTransfer.files]);
+  });
+
+  fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+
+  function addFiles(files) {
+    const remaining = 5 - selectedFiles.length;
+    const toAdd = files.filter(f => f.type.startsWith('image/')).slice(0, remaining);
+    selectedFiles = [...selectedFiles, ...toAdd];
+    renderPreviews();
+  }
+
+  function renderPreviews() {
+    previews.innerHTML = selectedFiles.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div class="preview-item">
+        <img src="${url}" alt="preview" />
+        <button type="button" class="preview-remove" onclick="removeFile(${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.removeFile = function(i) {
+    selectedFiles.splice(i, 1);
+    renderPreviews();
+  };
+
+  // Form submit
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = sendingTxt;
+
+    const formData = new FormData();
+    formData.append('name', document.getElementById('name').value);
+    formData.append('email', document.getElementById('email').value);
+    formData.append('phone', document.getElementById('phone').value);
+    formData.append('style', document.getElementById('style').value);
+    formData.append('bodyPart', document.getElementById('bodyPart').value);
+    formData.append('message', document.getElementById('message').value);
+    selectedFiles.forEach(f => formData.append('images', f));
+
+    try {
+      const res = await fetch(`${API_URL}/api/contact`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        window.showToast(successTxt, 'success');
+        e.target.reset();
+        selectedFiles = [];
+        renderPreviews();
+      } else {
+        window.showToast(data.error || errorTxt, 'error');
+      }
+    } catch {
+      window.showToast(errorTxt, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = sendTxt;
+    }
+  });
+</script>
