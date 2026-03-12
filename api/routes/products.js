@@ -53,7 +53,14 @@ router.post('/', requireAdmin, upload.array('images', 5), async (req, res) => {
         for (const file of req.files) {
             const result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
-                    { folder: 'products', resource_type: 'image' },
+                    { 
+                        folder: 'products', 
+                        resource_type: 'image',
+                        tags: ['store', 'products'],
+                        transformation: [
+                            { quality: 'auto', fetch_format: 'auto' }
+                        ]
+                    },
                     (error, result) => error ? reject(error) : resolve(result)
                 ).end(file.buffer);
             });
@@ -87,7 +94,14 @@ router.put('/:id', requireAdmin, upload.array('newImages', 5), async (req, res) 
         for (const file of req.files) {
             const result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
-                    { folder: 'products', resource_type: 'image' },
+                    { 
+                        folder: 'products', 
+                        resource_type: 'image',
+                        tags: ['store', 'products'],
+                        transformation: [
+                            { quality: 'auto', fetch_format: 'auto' }
+                        ]
+                    },
                     (error, result) => error ? reject(error) : resolve(result)
                 ).end(file.buffer);
             });

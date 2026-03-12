@@ -12,8 +12,9 @@ El proyecto ha sido diseñado pensando en ofrecer un rendimiento sobresaliente y
 
 El proyecto principal se divide en dos:
 1. **Frontend:** Construido con **Astro**, ideal para sitios de muchísimo contenido e imágenes. Es super rápido, seguro y tiene soporte multi-idioma nativo para textos e inventario.
-2. **Backend API:** Un micro-servidor **Node.js (Express)** que es responsable exclusivo de manejar procesos delicados: verificar pagos y firmar transacciones de base de datos.
-3. **Base de Datos & Auth:** Utilizamos **Supabase (PostgreSQL)**. Suple tanto la autenticación (usuarios, contraseñas, Google) como el manejo relacional de datos de tienda y administración.
+2. **Backend API:** Un micro-servidor **Node.js (Express)** que maneja procesos delicados utilizando **Prisma ORM**.
+3. **Persistencia (Desarrollo):** Actualmente utilizamos **SQLite** (`api/prisma/tattoo.db`) para agilizar el desarrollo local sin dependencias externas.
+4. **Persistencia (Producción - Planificado):** Se migrará a **Supabase (PostgreSQL)** para el despliegue final, aprovechando la versatilidad de Prisma para cambiar de motor de base de datos fácilmente.
 
 ### 🛠 Tecnologías Principales Integradas
 - **Astro** (Framework UI web ultrarrápido)
@@ -53,8 +54,10 @@ C:\Dev\AdrianPortilla Tatto\
 
 Si deseas descargar el repo y probar el entorno local, asegúrate de tener:
 - **Node.js** (v18 o superior).
-- Una cuenta e instancia viva en **Supabase** (PostgreSQL).
-- Una cuenta en **Cloudinary** (Si vas a alterar la galería visual).
+- **SQLite** (Integrado mediante Prisma, se autogenera).
+- **Cloudinary:** Cuenta activa para optimización fotográfica.
+  > [!IMPORTANT]
+  > La cuenta de Cloudinary configurada actualmente está asociada al **correo de la Universidad**.
 - Llaves activas para pagos en **ONVO**.
 
 ---

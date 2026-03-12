@@ -43,7 +43,14 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
     try {
         const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
-                { folder: 'gallery', resource_type: 'image' },
+                { 
+                    folder: 'gallery', 
+                    resource_type: 'image',
+                    tags: ['portfolio', 'gallery'],
+                    transformation: [
+                        { quality: 'auto', fetch_format: 'auto' }
+                    ]
+                },
                 (error, result) => error ? reject(error) : resolve(result)
             ).end(req.file.buffer);
         });
@@ -62,8 +69,11 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
             url: result.secure_url
         });
     } catch (err) {
-        console.error('Gallery upload error:', err);
-        res.status(500).json({ error: 'Error al subir imagen' });
+        console.error('Gallery upload error detail:', err);
+        res.status(500).json({ 
+            error: 'Error al subir imagen a Cloudinary',
+            details: err.message 
+        });
     }
 });
 

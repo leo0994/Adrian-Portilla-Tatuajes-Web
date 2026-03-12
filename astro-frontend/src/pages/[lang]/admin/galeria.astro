@@ -344,7 +344,7 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
           </div>` : ''}
         ${item.status === 'error' ? `
           <div class="status-overlay" style="background:rgba(239,68,68,0.6);">
-            <span>✗ Error</span>
+            <span>✗ ${item.errorMsg || 'Error'}</span>
           </div>` : ''}
       </div>
     `).join('');
@@ -383,6 +383,17 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
       queue[i].status = 'uploading';
       renderQueue();
 
+      // Simple interval for visual feedback
+      const card = document.getElementById(`preview-${i}`);
+      const fill = card?.querySelector('.progress-fill');
+      let simulatedProgress = 0;
+      const progressInt = setInterval(() => {
+        if (simulatedProgress < 90) {
+          simulatedProgress += Math.random() * 10;
+          if (fill) fill.style.width = `${simulatedProgress}%`;
+        }
+      }, 300);
+
       const fd = new FormData();
       fd.append('image', queue[i].file);
 
@@ -392,14 +403,21 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
           headers: { 'Authorization': `Bearer ${getToken()}` },
           body: fd
         });
+        
+        clearInterval(progressInt);
+        
         const data = await res.json();
-        if (data.url) {
+        if (res.ok && data.url) {
           queue[i].status = 'done';
           done++;
         } else {
+          console.error('Upload error:', data);
           queue[i].status = 'error';
+          queue[i].errorMsg = data.error || 'Err';
         }
-      } catch {
+      } catch (err) {
+        clearInterval(progressInt);
+        console.error('Fetch error:', err);
         queue[i].status = 'error';
       }
 

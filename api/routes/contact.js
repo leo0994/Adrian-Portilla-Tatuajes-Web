@@ -27,7 +27,14 @@ router.post('/', upload.array('images', 5), async (req, res) => {
             try {
                 const result = await new Promise((resolve, reject) => {
                     cloudinary.uploader.upload_stream(
-                        { folder: 'contact-requests', resource_type: 'image' },
+                        { 
+                            folder: 'contact-requests', 
+                            resource_type: 'image',
+                            tags: ['contact', 'request'],
+                            transformation: [
+                                { quality: 'auto', fetch_format: 'auto' }
+                            ]
+                        },
                         (error, result) => error ? reject(error) : resolve(result)
                     ).end(file.buffer);
                 });
