@@ -13,7 +13,16 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/') || file.mimetype === 'image/svg+xml') {
+            return cb(new Error('Solo se permiten archivos de imagen (no SVG)'));
+        }
+        cb(null, true);
+    }
+});
 
 // GET /api/gallery
 router.get('/', async (req, res) => {

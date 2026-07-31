@@ -8,30 +8,30 @@
 /* ── CSS Variables ── */
 :root {
   /* Dark mode — Tattoo parlour: charcoal, ash, blood */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
-  --bg-card: rgba(18, 18, 18, 0.75);
-  --bg-elevated: rgba(28, 28, 28, 0.9);
+  --bg-primary: #09090B;
+  --bg-secondary: #17171A;
+  --bg-card: rgba(34, 34, 37, 0.75);
+  --bg-elevated: rgba(34, 34, 37, 0.92);
 
-  --text-primary: #f1f0ee;
-  --text-secondary: #9a9898;
-  --text-muted: #4a4848;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A3A3A3;
+  --text-muted: #58585c;
 
-  /* Blood Red accent */
-  --accent: #8B1A1A;
-  --accent-light: #b02020;
-  --accent-hover: #a01e1e;
-  --accent-dim: rgba(139, 26, 26, 0.12);
-  --accent-glow: rgba(139, 26, 26, 0.35);
+  /* Blood Red accent — vino as base, carmesí as hover/interactive */
+  --accent: #750F1E;
+  --accent-light: #B11226;
+  --accent-hover: #B11226;
+  --accent-dim: rgba(117, 15, 30, 0.14);
+  --accent-glow: rgba(177, 18, 38, 0.35);
 
-  --border: rgba(255, 255, 255, 0.07);
-  --border-subtle: rgba(255, 255, 255, 0.035);
+  --border: #353539;
+  --border-subtle: rgba(53, 53, 57, 0.5);
 
   --shadow: 0 24px 48px rgba(0, 0, 0, 0.85);
   --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.6);
 
   --overlay: rgba(0, 0, 0, 0.88);
-  --nav-bg: rgba(8, 8, 8, 0.82);
+  --nav-bg: rgba(6, 6, 7, 0.82);
 
   --input-bg: rgba(255, 255, 255, 0.035);
   --input-border: rgba(255, 255, 255, 0.09);
@@ -40,44 +40,44 @@
   --error: #dc2626;
   --error-dim: rgba(220, 38, 38, 0.15);
 
-  --bg-body-main: #0a0a0a;
+  --bg-body-main: #09090B;
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  /* Light mode — Platinum metallic, like luxury car paint */
-  --bg-primary: #c4c4c4;
-  --bg-secondary: #b8b8b8;
-  --bg-card: rgba(180, 180, 180, 0.75);
-  --bg-elevated: rgba(200, 200, 200, 0.95);
+  /* Light mode — warm gallery white, crimson accent */
+  --bg-primary: #F3EFEF;
+  --bg-secondary: #E8E1E2;
+  --bg-card: rgba(252, 250, 250, 0.85);
+  --bg-elevated: rgba(252, 250, 250, 0.96);
 
-  --text-primary: #0f0f0f;
-  --text-secondary: #2e2e2e;
-  --text-muted: #6a6a6a;
+  --text-primary: #181518;
+  --text-secondary: #5D565A;
+  --text-muted: #736B6E;
 
-  --accent: #8B1A1A;
-  --accent-light: #a01e1e;
-  --accent-hover: #6e1414;
-  --accent-dim: rgba(139, 26, 26, 0.12);
-  --accent-glow: rgba(139, 26, 26, 0.25);
+  --accent: #A51023;
+  --accent-light: #C91832;
+  --accent-hover: #C91832;
+  --accent-dim: rgba(165, 16, 35, 0.1);
+  --accent-glow: rgba(165, 16, 35, 0.2);
 
-  --border: rgba(0, 0, 0, 0.14);
-  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border: #CEC4C6;
+  --border-subtle: rgba(206, 196, 198, 0.5);
 
   --shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
   --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.1);
 
-  --overlay: rgba(160, 160, 160, 0.9);
-  --nav-bg: rgba(168, 168, 168, 0.92);
+  --overlay: rgba(243, 239, 239, 0.9);
+  --nav-bg: rgba(248, 244, 244, 0.92);
 
-  --input-bg: rgba(0, 0, 0, 0.07);
-  --input-border: rgba(0, 0, 0, 0.18);
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --input-border: rgba(0, 0, 0, 0.12);
 
   --success: #15803d;
   --error: #dc2626;
   --error-dim: rgba(220, 38, 38, 0.1);
 
-  --bg-body-main: #c4c4c4;
+  --bg-body-main: #F3EFEF;
   color-scheme: light;
 }
 
@@ -111,9 +111,9 @@ h2,
 h3,
 h4 {
   font-family: 'Inter', sans-serif;
-  letter-spacing: -0.03em;
-  font-weight: 800;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-weight: 300;
+  line-height: 1.15;
 }
 
 h1 {
@@ -299,7 +299,6 @@ main {
   text-align: center;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, #151515 0%, var(--bg-primary) 72%);
 }
 
 .hero::before {
@@ -462,7 +461,7 @@ main {
 
 .gallery-item {
   border-radius: 8px;
-  background-color: #1a1a1a;
+  background-color: var(--bg-elevated);
   border: 1px solid rgba(139, 26, 26, 0.25);
   overflow: hidden;
   position: relative;
@@ -1272,4 +1271,46 @@ select option {
 
 .delay-300 {
   transition-delay: 300ms;
+}
+
+/* ── Animated Gradient Text (color flows slowly inside the letters, always opaque) ── */
+@keyframes gradientFlow {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.gradient-text {
+  background-image: linear-gradient(90deg, var(--text-primary) 0%, var(--accent-light) 50%, var(--text-primary) 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientFlow 7s ease-in-out infinite;
+}
+
+/* Brand mark (nav logo, artist name) — richer, accent-led flow */
+.gradient-text--brand {
+  background-image: linear-gradient(90deg, var(--accent-light) 0%, var(--text-primary) 50%, var(--accent-light) 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientFlow 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .gradient-text,
+  .gradient-text--brand {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
 }

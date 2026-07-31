@@ -3,16 +3,25 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🌱 Forced Seeding script...');
+    console.log('🌱 Seeding script...');
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-    const userEmail = 'user@example.com';
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
-    // Hash passwords using env or defaults
-    const adminPass = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'AdminPass123!', 10);
-    const userPass = bcrypt.hashSync('UserPass123!', 10);
+    if (!adminEmail || !adminPassword) {
+        console.error('❌ Faltan variables de entorno ADMIN_EMAIL y/o ADMIN_PASSWORD en tu .env.');
+        console.error('   Defínelas antes de correr el seed. No se usarán credenciales por defecto.');
+        process.exit(1);
+    }
 
-    console.log('Updating/Creating admin user...');
+    if (adminPassword.length < 8) {
+        console.error('❌ ADMIN_PASSWORD debe tener al menos 8 caracteres.');
+        process.exit(1);
+    }
+
+    const adminPass = bcrypt.hashSync(adminPassword, 12);
+
+    console.log(`Updating/Creating admin user (${adminEmail})...`);
     await prisma.user.upsert({
         where: { email: adminEmail },
         update: {
@@ -26,21 +35,7 @@ async function main() {
         }
     });
 
-    console.log('Updating/Creating test user...');
-    await prisma.user.upsert({
-        where: { email: userEmail },
-        update: {
-            password: userPass,
-            role: 'user'
-        },
-        create: {
-            email: userEmail,
-            password: userPass,
-            role: 'user'
-        }
-    });
-
-    console.log('✅ Forced seeding complete!');
+    console.log('✅ Seeding complete! (no test/demo user created)');
 }
 
 main()

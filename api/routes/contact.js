@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,14 +12,47 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/') || file.mimetype === 'image/svg+xml') {
+            return cb(new Error('Solo se permiten archivos de imagen (no SVG)'));
+        }
+        cb(null, true);
+    }
+});
+
+// Endpoint público sin auth: limitar intentos para que no se use como
+// relay de spam/phishing ni para agotar la cuota de Cloudinary/SMTP.
+const contactLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Demasiadas solicitudes. Por favor intenta de nuevo en unos minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// El HTML del correo interpola estos campos directamente; hay que escaparlos
+// para que un valor como "<img src=x onerror=...>" no se ejecute en el cliente de correo.
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
 
 // POST /api/contact
-router.post('/', upload.array('images', 5), async (req, res) => {
+router.post('/', contactLimiter, upload.array('images', 5), async (req, res) => {
     const { name, email, phone, style, bodyPart, message } = req.body;
 
     if (!name || !email || !message) {
         return res.status(400).json({ error: 'Nombre, email y mensaje son requeridos' });
+    }
+
+    if (!EMAIL_RE.test(email)) {
+        return res.status(400).json({ error: 'Email inválido' });
     }
 
     const uploadedImages = [];
@@ -140,20 +174,20 @@ router.post('/', upload.array('images', 5), async (req, res) => {
             port: process.env.SMTP_PORT || 587,
             secure: false, // true for 465, false for 587
             auth: {
-                user: process.env.SMTP_USER || 'leobarrantes8@gmail.com',
-                pass: process.env.SMTP_PASS || 'tu_password_de_aplicacion'
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
             }
         });
 
         const mailOptions = {
-            from: `"Adrian Portilla Studio" <${process.env.SMTP_USER || 'leobarrantes8@gmail.com'}>`, // Tu correo
+            from: `"Adrian Portilla Studio" <${process.env.SMTP_USER}>`,
             to: email, // Correo del cliente
-            bcc: process.env.SMTP_USER || 'leobarrantes8@gmail.com', // Copia oculta para el tatuador
+            bcc: process.env.SMTP_USER, // Copia oculta para el tatuador
             subject: `Tattoo Request Received - ${name}`,
             text: `Hi ${name},\n\nWe have received your tattoo request. Attached is the receipt of the information you provided.\n\nAdrian will review it and get back to you soon.\n\nBest regards,\nAdrian Portilla Studio`,
             html: `
                 <div style="font-family: Arial, sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                    <h2 style="color: #dc2626;">Hi ${name},</h2>
+                    <h2 style="color: #dc2626;">Hi ${escapeHtml(name)},</h2>
                     <p>We successfully received your tattoo request!</p>
                     <p>For your records, we have attached a beautiful PDF summary of the information and reference photos you shared with us.</p>
                     <p>Adrian will personally review your idea and get back to you within 24-48 hours to discuss the next steps.</p>
@@ -172,11 +206,11 @@ router.post('/', upload.array('images', 5), async (req, res) => {
 
         // Attempting to send (it will likely fail locally without credentials, but we log it gracefully)
         try {
-            if (process.env.SMTP_PASS) {
+            if (process.env.SMTP_USER && process.env.SMTP_PASS) {
                 await transporter.sendMail(mailOptions);
                 console.log('📬 Email receipt sent successfully with PDF attached.');
             } else {
-                console.log('⚠️ PDF Generated but SMTP is not fully configured, skipping email dispatch.');
+                console.log('⚠️ PDF Generated but SMTP is not fully configured (falta SMTP_USER/SMTP_PASS), skipping email dispatch.');
             }
         } catch (emailErr) {
             console.error('Email error:', emailErr);

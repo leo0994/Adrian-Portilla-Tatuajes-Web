@@ -10,13 +10,13 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
 
   <section class="section">
     <div class="container">
-      <div class="section-header">
-        <h1 class="section-title" style="display:inline-flex; align-items:center; gap:0.75rem;">
+      <div class="section-header reveal">
+        <h1 class="section-title gradient-text" style="display:inline-flex; align-items:center; gap:0.75rem;">
           {t.store.title}
           <span style="font-size:0.7rem; background:var(--accent); color:var(--bg-primary); padding:3px 8px; border-radius:4px; transform:rotate(5deg); box-shadow:0 3px 8px rgba(0,0,0,0.5);">V3 PREVIEW</span>
         </h1>
-        <div class="golden-line"></div>
-        <p class="section-subtitle">{t.store.subtitle} — Módulo en desarrollo</p>
+        <div class="golden-line delay-100 reveal"></div>
+        <p class="section-subtitle delay-200 reveal">{t.store.subtitle} — Módulo en desarrollo</p>
       </div>
 
       <div id="productsGrid" class="products-grid">
@@ -134,22 +134,25 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
 
   window.startCheckout = async function() {
     if (cart.length === 0) return;
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const modal = document.getElementById('onvoModal');
     modal.style.display = 'flex';
+
+    // El total NO se calcula ni se confía en el cliente: el backend lo
+    // recalcula desde la base de datos a partir de los productos y cantidades.
+    const items = cart.map(i => ({ id: i.id, qty: i.qty }));
 
     try {
       const res = await fetch(`${API_URL}/api/payments/intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total, currency: 'USD', description: 'Compra AP Tattoo Store' })
+        body: JSON.stringify({ items, currency: 'USD', description: 'Compra AP Tattoo Store' })
       });
       const data = await res.json();
       if (data.paymentIntentId) {
         document.getElementById('onvoPayContainer').innerHTML = `
           <div style="text-align:center;">
             <div style="font-size:2rem;margin-bottom:1rem;">💳</div>
-            <p style="color:var(--text-primary);margin-bottom:0.5rem;font-weight:600;">${totalTxt}: $${total.toFixed(2)} ${currencyTxt}</p>
+            <p style="color:var(--text-primary);margin-bottom:0.5rem;font-weight:600;">${totalTxt}: $${data.amount.toFixed(2)} ${currencyTxt}</p>
             <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Payment Intent ID: ${data.paymentIntentId}</p>
             <p style="color:var(--text-secondary);font-size:0.85rem;">El widget de ONVO se cargará con tu clave pública configurada.</p>
           </div>`;

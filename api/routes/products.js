@@ -13,17 +13,44 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/') || file.mimetype === 'image/svg+xml') {
+            return cb(new Error('Solo se permiten archivos de imagen (no SVG)'));
+        }
+        cb(null, true);
+    }
+});
+
+// Las imágenes se guardan en SQLite como string JSON (columna `images` es String).
+// Estos helpers centralizan el parseo para no repetir try/catch en cada ruta.
+function parseImages(images) {
+    if (Array.isArray(images)) return images;
+    try {
+        return JSON.parse(images || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function serializeProduct(product) {
+    return {
+        ...product,
+        id: typeof product.id === 'bigint' ? Number(product.id) : product.id,
+        images: parseImages(product.images)
+    };
+}
 
 // GET /api/products
 router.get('/', async (req, res) => {
     try {
-        let products = await db.product.findMany({
+        const products = await db.product.findMany({
             where: { active: true },
             orderBy: { created_at: 'desc' }
         });
-        products = products.map(p => ({ ...p, id: typeof p.id === 'bigint' ? Number(p.id) : p.id }));
-        res.json({ products });
+        res.json({ products: products.map(serializeProduct) });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Error obteniendo productos' });
@@ -37,7 +64,7 @@ router.get('/:id', async (req, res) => {
             where: { id: Number(req.params.id), active: true }
         });
         if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
-        res.json({ product: { ...product, id: typeof product.id === 'bigint' ? Number(product.id) : product.id } });
+        res.json({ product: serializeProduct(product) });
     } catch (err) {
         return res.status(500).json({ error: 'Error obteniendo producto' });
     }
@@ -70,9 +97,9 @@ router.post('/', requireAdmin, upload.array('images', 5), async (req, res) => {
 
     try {
         const product = await db.product.create({
-            data: { name, description, price: parseFloat(price), currency, stock: parseInt(stock), images: imageUrls }
+            data: { name, description, price: parseFloat(price), currency, stock: parseInt(stock), images: JSON.stringify(imageUrls) }
         });
-        res.status(201).json({ product: { ...product, id: typeof product.id === 'bigint' ? Number(product.id) : product.id } });
+        res.status(201).json({ product: serializeProduct(product) });
     } catch (error) {
         console.error('Prisma Insert Error:', error);
         return res.status(500).json({ error: 'Error guardando producto' });
@@ -88,7 +115,7 @@ router.put('/:id', requireAdmin, upload.array('newImages', 5), async (req, res) 
     if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const { name, description, price, currency, stock, existingImages } = req.body;
-    let images = existingImages ? JSON.parse(existingImages) : product.images;
+    let images = existingImages ? JSON.parse(existingImages) : parseImages(product.images);
 
     if (req.files && req.files.length > 0) {
         for (const file of req.files) {
@@ -118,10 +145,10 @@ router.put('/:id', requireAdmin, upload.array('newImages', 5), async (req, res) 
                 price: price ? parseFloat(price) : product.price,
                 currency: currency || product.currency,
                 stock: stock !== undefined ? parseInt(stock) : product.stock,
-                images: images
+                images: JSON.stringify(images)
             }
         });
-        res.json({ product: { ...updated, id: typeof updated.id === 'bigint' ? Number(updated.id) : updated.id } });
+        res.json({ product: serializeProduct(updated) });
     } catch (error) {
         return res.status(500).json({ error: 'Error actualizando producto' });
     }

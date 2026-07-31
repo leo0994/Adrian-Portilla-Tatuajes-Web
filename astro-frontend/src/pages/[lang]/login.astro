@@ -49,7 +49,24 @@ const GOOGLE_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || 'TU_GOOGLE_C
     </div>
 
     <div id="googleBtnContainer" style="display:flex; justify-content:center;"></div>
-    
+
+    {import.meta.env.DEV && (
+    <div style="margin-top:1.5rem; padding:1rem; border:1px dashed var(--border); border-radius:12px; background:var(--accent-dim); font-size:0.8rem;">
+      <strong style="color:var(--accent);">🔧 Modo Desarrollo</strong>
+      <p style="color:var(--text-secondary); margin:0.5rem 0 0.75rem;">Google Sign-In todavía no está configurado. Credenciales de prueba (user):</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+        <code id="devUserEmail" style="color:var(--text-primary); word-break:break-all;">leobarrantes8@gmail.com</code>
+        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.7rem; flex-shrink:0;" onclick="copyDevValue('devUserEmail')">Copiar</button>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+        <code id="devUserPassword" style="color:var(--text-primary);">DevPortilla2026!</code>
+        <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.7rem; flex-shrink:0;" onclick="copyDevValue('devUserPassword')">Copiar</button>
+      </div>
+      <button type="button" class="btn btn-outline" style="width:100%; margin-bottom:0.5rem;" onclick="fillDevUser()">Llenar formulario</button>
+      <a href={`/${lang}/admin`} style="display:block; text-align:center; color:var(--text-muted); font-size:0.75rem; margin-top:0.5rem;">¿Buscas el panel admin? →</a>
+    </div>
+    )}
+
   </div>
 </section>
 
@@ -92,6 +109,17 @@ const GOOGLE_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || 'TU_GOOGLE_C
       );
     }
   }
+
+  // Dev-only helpers (rendered only when import.meta.env.DEV is true)
+  window.copyDevValue = function(id) {
+    const text = document.getElementById(id)?.textContent || '';
+    navigator.clipboard.writeText(text);
+    window.showToast?.('Copiado al portapapeles', 'success');
+  };
+  window.fillDevUser = function() {
+    document.getElementById('email').value = 'leobarrantes8@gmail.com';
+    document.getElementById('password').value = 'DevPortilla2026!';
+  };
 
   document.getElementById('togglePasswordBtn').addEventListener('click', () => {
     const input = document.getElementById('password');

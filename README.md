@@ -136,17 +136,24 @@ npm run dev
 
 ---
 
-## 👮‍♂️ Credenciales por Defecto (Acceso Semilla)
+## 👮‍♂️ Creación de Usuario Admin
 
-Si aplicaste con éxito el script `supabase_setup.sql`, el sistema inyecta directamente dos usuarios de prueba en sus respectivos roles:
+`supabase_setup.sql` ya **no** inserta credenciales de prueba (se removieron por seguridad — nunca deben quedar documentadas en texto plano en un repo).
 
-- **Rol Admin (Entrada al Panel `/es/admin`):**
-  - **Correo:** `lbarrantesm@ucenfotec.ac.cr`
-  - **Password:** `TestAdmin#123`
+Para crear tu propio usuario admin:
 
-- **Rol Cliente Normal:**
-  - **Correo:** `leobarrantes8@gmail.com`
-  - **Password:** `TestUser#123`
+1. Genera un hash bcrypt de tu password real:
+   ```bash
+   node -e "console.log(require('bcryptjs').hashSync('TU_PASSWORD_REAL', 12))"
+   ```
+2. Copia el hash e insértalo tú mismo en Supabase (SQL Editor) con tu correo real:
+   ```sql
+   INSERT INTO public.users (email, password, role)
+   VALUES ('tu_correo@ejemplo.com', '<hash_generado>', 'admin')
+   ON CONFLICT (email) DO NOTHING;
+   ```
+
+En desarrollo local (SQLite), usa el script de seed en su lugar — ver `api/prisma/seed.js`, que ahora **requiere** `ADMIN_EMAIL` y `ADMIN_PASSWORD` en tu `.env` (no trae contraseñas por defecto).
 
 ---
 

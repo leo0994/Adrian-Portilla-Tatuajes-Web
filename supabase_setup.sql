@@ -22,12 +22,15 @@ CREATE TABLE IF NOT EXISTS public.products (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Insertar usuarios por defecto (las contraseñas están hasheadas con bcrypt)
--- 'leo.barrantes8@gmail.com' -> TestUser#123
--- 'lbarrantesm@ucenfotec.ac.cr' -> TestAdmin#123
-
-INSERT INTO public.users (email, password, role)
-VALUES 
-  ('leobarrantes8@gmail.com', '$2a$10$wJt0d5mK/7q.d7m/pWqD1uGXXdK9x6R6rZQy7I/hJ1R/cTfQO5wzS', 'user'),
-  ('lbarrantesm@ucenfotec.ac.cr', '$2a$10$tZ2yN/hX2QzKx2g9O8L8jOx31Q3p/wQx4r3t0m1Q/eR4T5e6X7Y8Z', 'admin')
-ON CONFLICT (email) DO NOTHING;
+-- IMPORTANTE: No insertes usuarios con contraseñas hardcodeadas aquí.
+-- Genera tu propio hash bcrypt y crea el usuario admin de forma segura, por ejemplo:
+--
+--   node -e "console.log(require('bcryptjs').hashSync('TU_PASSWORD_REAL', 12))"
+--
+-- Copia el hash resultante y ejecuta un INSERT manual sólo tú, con tu correo real:
+--
+--   INSERT INTO public.users (email, password, role)
+--   VALUES ('tu_correo_admin@ejemplo.com', '<hash_generado>', 'admin')
+--   ON CONFLICT (email) DO NOTHING;
+--
+-- No documentes contraseñas en texto plano ni las subas a git.

@@ -12,7 +12,7 @@ export default defineConfig({
   }),
 
   server: {
-    port: 4321
+    port: 4322
   },
 
   vite: {

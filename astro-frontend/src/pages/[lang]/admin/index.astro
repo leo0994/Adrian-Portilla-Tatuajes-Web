@@ -90,6 +90,22 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
             <div id="loginError" style="display:none; color:var(--error); font-size:0.85rem; margin-bottom:1rem; text-align:center;"></div>
             <button type="submit" class="btn btn-primary" style="width:100%;" id="loginBtn">Ingresar</button>
         </form>
+
+        {import.meta.env.DEV && (
+        <div style="margin-top:1.5rem; padding:1rem; border:1px dashed var(--border); border-radius:12px; background:var(--accent-dim); font-size:0.8rem;">
+            <strong style="color:var(--accent);">🔧 Modo Desarrollo</strong>
+            <p style="color:var(--text-secondary); margin:0.5rem 0 0.75rem;">Google Sign-In todavía no está configurado. Credenciales de prueba (admin):</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                <code id="devAdminEmail" style="color:var(--text-primary); word-break:break-all;">lbarrantesm@ucenfotec.ac.cr</code>
+                <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.7rem; flex-shrink:0;" onclick="copyDevValue('devAdminEmail')">Copiar</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                <code id="devAdminPassword" style="color:var(--text-primary);">DevPortilla2026!</code>
+                <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.7rem; flex-shrink:0;" onclick="copyDevValue('devAdminPassword')">Copiar</button>
+            </div>
+            <button type="button" class="btn btn-outline" style="width:100%;" onclick="fillDevAdmin()">Llenar formulario</button>
+        </div>
+        )}
     </div>
 </div>
 </Layout>
@@ -130,6 +146,17 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
     window.adminLogout = function() {
         localStorage.removeItem('apt_admin_token');
         window.location.reload();
+    };
+
+    // Dev-only helpers (rendered only when import.meta.env.DEV is true)
+    window.copyDevValue = function(id) {
+        const text = document.getElementById(id)?.textContent || '';
+        navigator.clipboard.writeText(text);
+        window.showToast?.('Copiado al portapapeles', 'success');
+    };
+    window.fillDevAdmin = function() {
+        document.getElementById('email').value = 'lbarrantesm@ucenfotec.ac.cr';
+        document.getElementById('password').value = 'DevPortilla2026!';
     };
 
     // Toggle Password

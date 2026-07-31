@@ -10,16 +10,16 @@ const API_URL = import.meta.env.API_URL || 'http://localhost:3001';
 
   <section class="section">
     <div class="container">
-      <div class="section-header">
-        <h1 class="section-title">{t.contact.title}</h1>
-        <div class="golden-line"></div>
-        <p class="section-subtitle">{t.contact.subtitle}</p>
+      <div class="section-header reveal">
+        <h1 class="section-title gradient-text">{t.contact.title}</h1>
+        <div class="golden-line delay-100 reveal"></div>
+        <p class="section-subtitle delay-200 reveal">{t.contact.subtitle}</p>
       </div>
 
       <div class="contact-grid">
         <!-- Info -->
-        <div class="contact-info">
-          <h3>Adrian Portilla</h3>
+        <div class="contact-info reveal">
+          <h3 class="gradient-text--brand">Adrian Portilla</h3>
           <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.9rem;">
             {t.contact.desc}
           </p>
